@@ -1,0 +1,279 @@
+---
+/contrib/staffsched/me:
+  get:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Me#get"
+    operationId: staffSchedMe
+    tags: [staffsched]
+    summary: Get current logged-in Koha staff member
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Current user info
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+
+/contrib/staffsched/staff:
+  get:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Staff#list"
+    operationId: staffSchedListStaff
+    tags: [staffsched]
+    summary: List staff borrowers by category code
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of staff
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+
+/contrib/staffsched/branches:
+  get:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Branches#list"
+    operationId: staffSchedListBranches
+    tags: [staffsched]
+    summary: List Koha branches with scheduler color codes
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of branches
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+
+/contrib/staffsched/branches/{branchcode}/color:
+  put:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Branches#update_color"
+    operationId: staffSchedUpdateBranchColor
+    tags: [staffsched]
+    summary: Set a custom color for a branch
+    parameters:
+      - name: branchcode
+        in: path
+        required: true
+        type: string
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Updated
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        parameters: manage_libraries
+
+/contrib/staffsched/closures:
+  get:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Closures#list"
+    operationId: staffSchedListClosures
+    tags: [staffsched]
+    summary: List Koha special and repeating holidays as closures
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of closures
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+
+/contrib/staffsched/zones:
+  get:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Zones#list"
+    operationId: staffSchedListZones
+    tags: [staffsched]
+    summary: List work zones
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of zones
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+  post:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Zones#create"
+    operationId: staffSchedCreateZone
+    tags: [staffsched]
+    summary: Create a work zone
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Zone created
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        parameters: manage_libraries
+
+/contrib/staffsched/zones/{zone_id}:
+  put:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Zones#update"
+    operationId: staffSchedUpdateZone
+    tags: [staffsched]
+    summary: Update a work zone
+    parameters:
+      - name: zone_id
+        in: path
+        required: true
+        type: string
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Zone updated
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        parameters: manage_libraries
+
+/contrib/staffsched/assignments:
+  get:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Assignments#list"
+    operationId: staffSchedListAssignments
+    tags: [staffsched]
+    summary: List assignments, optionally filtered by date or range
+    parameters:
+      - name: shift_date
+        in: query
+        type: string
+      - name: from
+        in: query
+        type: string
+      - name: to
+        in: query
+        type: string
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of assignments
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+  post:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Assignments#create"
+    operationId: staffSchedCreateAssignment
+    tags: [staffsched]
+    summary: Create one or many assignments (pass array for batch)
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Assignment(s) created
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+
+/contrib/staffsched/assignments/{assignment_id}:
+  put:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Assignments#update"
+    operationId: staffSchedUpdateAssignment
+    tags: [staffsched]
+    summary: Update an assignment (or its series)
+    parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        type: string
+      - name: series_id
+        in: query
+        type: string
+      - name: after_date
+        in: query
+        type: string
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Assignment updated
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+  delete:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Assignments#delete"
+    operationId: staffSchedDeleteAssignment
+    tags: [staffsched]
+    summary: Delete an assignment (or its series)
+    parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        type: string
+      - name: series_id
+        in: query
+        type: string
+      - name: after_date
+        in: query
+        type: string
+    produces:
+      - application/json
+    responses:
+      "204":
+        description: Deleted
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+
+/contrib/staffsched/audit:
+  get:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Audit#list"
+    operationId: staffSchedListAudit
+    tags: [staffsched]
+    summary: List audit log entries
+    parameters:
+      - name: from
+        in: query
+        type: string
+      - name: to
+        in: query
+        type: string
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Audit log entries
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+  post:
+    x-mojo-to: "Com::LibSched::StaffScheduler::API::V1::Audit#create"
+    operationId: staffSchedCreateAudit
+    tags: [staffsched]
+    summary: Write an audit log entry
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Audit entry created
+      "401":
+        description: Unauthorized
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
