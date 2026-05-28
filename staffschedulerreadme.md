@@ -230,20 +230,25 @@ them.
 
 ```sql
 SELECT
-    b.surname, b.firstname,
+    b.surname, 
+    b.firstname,
     a.shift_date,
-    a.start_time, a.end_time,
-    CASE WHEN a.is_base_shift = 1 THEN 'Branch hours' ELSE 'Task zone' END AS shift_type,
+    a.start_time, 
+    a.end_time,
+    CASE 
+        WHEN a.is_base_shift = 1 THEN 'Branch hours' 
+        ELSE 'Task zone' 
+    END AS shift_type,
     COALESCE(br.branchname, a.location_id) AS branch,
     z.name AS zone,
     a.custom_label,
     a.notes
-FROM   koha_plugin_staffsched_assignments a
-JOIN   borrowers b               ON b.borrowernumber = a.employee_id
-LEFT  JOIN branches br            ON br.branchcode    = a.location_id
-LEFT  JOIN koha_plugin_staffsched_zones z ON z.id     = a.zone_id
-WHERE  a.shift_date = <<Schedule date|date>>
-ORDER  BY b.surname, b.firstname, a.start_time;
+FROM koha_plugin_staffsched_assignments a
+JOIN borrowers b ON b.borrowernumber = a.employee_id
+LEFT JOIN branches br ON br.branchcode = a.location_id
+LEFT JOIN koha_plugin_staffsched_zones z ON z.id = a.zone_id
+WHERE a.shift_date = <<Schedule date|date>>
+ORDER BY b.surname, b.firstname, a.start_time;
 ```
 
 #### 2. Hours worked per staff member in a date range
@@ -252,18 +257,19 @@ Sums branch-hour shifts only (task zones nest *inside* branch hours
 and would double-count).
 
 ```sql
+```sql
 SELECT
     b.borrowernumber,
     CONCAT(b.surname, ', ', b.firstname) AS staff,
     SUM(TIME_TO_SEC(TIMEDIFF(a.end_time, a.start_time))/3600.0) AS hours,
     COUNT(*) AS shifts
-FROM   koha_plugin_staffsched_assignments a
-JOIN   borrowers b ON b.borrowernumber = a.employee_id
-WHERE  a.is_base_shift = 1
-  AND  a.location_id  <> '__OUT__'
-  AND  a.shift_date BETWEEN <<From|date>> AND <<To|date>>
-GROUP  BY b.borrowernumber, b.surname, b.firstname
-ORDER  BY hours DESC;
+FROM koha_plugin_staffsched_assignments a
+JOIN borrowers b ON b.borrowernumber = a.employee_id
+WHERE a.is_base_shift = 1
+  AND a.location_id <> '__OUT__'
+  AND a.shift_date BETWEEN <<From|date>> AND <<To|date>>
+GROUP BY b.borrowernumber, b.surname, b.firstname
+ORDER BY hours DESC;
 ```
 
 #### 3. Branch coverage — staff-hours per branch, per day
