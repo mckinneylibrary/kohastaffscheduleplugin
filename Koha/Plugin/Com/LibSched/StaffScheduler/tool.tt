@@ -1,0 +1,37 @@
+[% USE raw %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Staff Scheduler &rsaquo; [% 'Koha' | html %]</title>
+[% INCLUDE 'doc-head-close.inc' %]
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'cat-search.inc' %]
+
+<style>
+  #root { width: 100%; min-height: calc(100vh - 80px); }
+</style>
+
+<div id="breadcrumbs">
+  <a href="/cgi-bin/koha/mainpage.pl">Home</a>
+  &rsaquo; Staff Scheduler
+</div>
+
+<div class="main container-fluid">
+  <div id="root"></div>
+</div>
+
+<script>
+  /* Make the Koha API base available to React.
+     Use the JSON-encoded form (api_base_json) so '&' isn't HTML-escaped
+     to '&amp;' inside this script block (which the browser would NOT
+     entity-decode, breaking the URL). */
+  window.__KOHA_API_BASE__ = [% api_base_js | $raw %];
+  /* Koha 22.11+ requires X-CSRF-TOKEN on every intranet POST. Without
+     it, C4::Auth returns an empty 403 before our plugin runs. */
+  window.__KOHA_CSRF_TOKEN__ = [% csrf_token_js | $raw %];
+</script>
+
+<!-- React bundle is served by the plugin's own asset() method so it works
+     regardless of how Apache/Plack maps /plugin/<class>/htdocs/ -->
+<link rel="stylesheet" href="[% asset_base %]index.css" />
+<script type="module" src="[% asset_base %]index.js"></script>
+
+[% INCLUDE 'intranet-bottom.inc' %]
