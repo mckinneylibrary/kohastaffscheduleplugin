@@ -170,20 +170,25 @@ them.
 1. Daily schedule for a given date
 ```sql
 SELECT
-    b.surname, b.firstname,
-    a.shift\_date,
-    a.start\_time, a.end\_time,
-    CASE WHEN a.is\_base\_shift = 1 THEN 'Branch hours' ELSE 'Task zone' END AS shift\_type,
-    COALESCE(br.branchname, a.location\_id) AS branch,
+    b.surname, 
+    b.firstname,
+    a.shift_date,
+    a.start_time, 
+    a.end_time,
+    CASE 
+        WHEN a.is_base_shift = 1 THEN 'Branch hours' 
+        ELSE 'Task zone' 
+    END AS shift_type,
+    COALESCE(br.branchname, a.location_id) AS branch,
     z.name AS zone,
-    a.custom\_label,
+    a.custom_label,
     a.notes
-FROM   koha\_plugin\_staffsched\_assignments a
-JOIN   borrowers b               ON b.borrowernumber = a.employee\_id
-LEFT  JOIN branches br            ON br.branchcode    = a.location\_id
-LEFT  JOIN koha\_plugin\_staffsched\_zones z ON z.id     = a.zone\_id
-WHERE  a.shift\_date = <<Schedule date|date>>
-ORDER  BY b.surname, b.firstname, a.start\_time;
+FROM koha_plugin_staffsched_assignments a
+JOIN borrowers b ON b.borrowernumber = a.employee_id
+LEFT JOIN branches br ON br.branchcode = a.location_id
+LEFT JOIN koha_plugin_staffsched_zones z ON z.id = a.zone_id
+WHERE a.shift_date = <<Schedule date|date>>
+ORDER BY b.surname, b.firstname, a.start_time;
 ```
 2. Hours worked per staff member in a date range
 Sums branch-hour shifts only (task zones nest inside branch hours
@@ -192,15 +197,15 @@ and would double-count).
 SELECT
     b.borrowernumber,
     CONCAT(b.surname, ', ', b.firstname) AS staff,
-    SUM(TIME\_TO\_SEC(TIMEDIFF(a.end\_time, a.start\_time))/3600.0) AS hours,
-    COUNT(\*) AS shifts
-FROM   koha\_plugin\_staffsched\_assignments a
-JOIN   borrowers b ON b.borrowernumber = a.employee\_id
-WHERE  a.is\_base\_shift = 1
-  AND  a.location\_id  <> '\_\_OUT\_\_'
-  AND  a.shift\_date BETWEEN <<From|date>> AND <<To|date>>
-GROUP  BY b.borrowernumber, b.surname, b.firstname
-ORDER  BY hours DESC;
+    SUM(TIME_TO_SEC(TIMEDIFF(a.end_time, a.start_time))/3600.0) AS hours,
+    COUNT(*) AS shifts
+FROM koha_plugin_staffsched_assignments a
+JOIN borrowers b ON b.borrowernumber = a.employee_id
+WHERE a.is_base_shift = 1
+  AND a.location_id <> '__OUT__'
+  AND a.shift_date BETWEEN <<From|date>> AND <<To|date>>
+GROUP BY b.borrowernumber, b.surname, b.firstname
+ORDER BY hours DESC;
 ```
 3. Branch coverage — staff-hours per branch, per day
 ```sql
@@ -220,30 +225,30 @@ ORDER  BY a.shift\_date, br.branchname;
 4. Zone utilization — hours by task zone
 ```sql
 SELECT
-    z.name AS zone,
-    COUNT(\*)                       AS shifts,
-    COUNT(DISTINCT a.employee\_id)  AS distinct\_staff,
-    ROUND(SUM(TIME\_TO\_SEC(TIMEDIFF(a.end\_time, a.start\_time))/3600.0), 2) AS staff\_hours
-FROM   koha\_plugin\_staffsched\_assignments a
-JOIN   koha\_plugin\_staffsched\_zones z ON z.id = a.zone\_id
-WHERE  a.is\_base\_shift = 0
-  AND  a.shift\_date BETWEEN <<From|date>> AND <<To|date>>
-GROUP  BY z.id, z.name
-ORDER  BY staff\_hours DESC;
+    a.shift_date,
+    br.branchname,
+    COUNT(DISTINCT a.employee_id) AS distinct_staff,
+    ROUND(SUM(TIME_TO_SEC(TIMEDIFF(a.end_time, a.start_time))/3600.0), 2) AS staff_hours
+FROM koha_plugin_staffsched_assignments a
+JOIN branches br ON br.branchcode = a.location_id
+WHERE a.is_base_shift = 1
+  AND a.location_id <> '__OUT__'
+  AND a.shift_date BETWEEN <<From|date>> AND <<To|date>>
+GROUP BY a.shift_date, br.branchcode, br.branchname
+ORDER BY a.shift_date, br.branchname;
 ```
 5. "Out" / time-off summary per staff in a range
-```sql
-SELECT
+```sqlSELECT
     CONCAT(b.surname, ', ', b.firstname) AS staff,
-    COUNT(\*) AS out\_days,
-    GROUP\_CONCAT(a.shift\_date ORDER BY a.shift\_date SEPARATOR ', ') AS dates
-FROM   koha\_plugin\_staffsched\_assignments a
-JOIN   borrowers b ON b.borrowernumber = a.employee\_id
-WHERE  a.is\_base\_shift = 1
-  AND  a.location\_id   = '\_\_OUT\_\_'
-  AND  a.shift\_date BETWEEN <<From|date>> AND <<To|date>>
-GROUP  BY b.borrowernumber, b.surname, b.firstname
-ORDER  BY out\_days DESC;
+    COUNT(*) AS out_days,
+    GROUP_CONCAT(a.shift_date ORDER BY a.shift_date SEPARATOR ', ') AS dates
+FROM koha_plugin_staffsched_assignments a
+JOIN borrowers b ON b.borrowernumber = a.employee_id
+WHERE a.is_base_shift = 1
+  AND a.location_id = '__OUT__'
+  AND a.shift_date BETWEEN <<From|date>> AND <<To|date>>
+GROUP BY b.borrowernumber, b.surname, b.firstname
+ORDER BY out_days DESC;
 ```
 6. Uncovered branch-hour windows missing any task zone
 Finds branch-hour shifts longer than N hours that have no task
@@ -251,96 +256,98 @@ zones nested inside them — useful for spotting unassigned floor
 time.
 ```sql
 SELECT
-    b.surname, b.firstname,
-    a.shift\_date,
-    a.start\_time, a.end\_time,
+    b.surname, 
+    b.firstname,
+    a.shift_date,
+    a.start_time, 
+    a.end_time,
     br.branchname
-FROM   koha\_plugin\_staffsched\_assignments a
-JOIN   borrowers b  ON b.borrowernumber = a.employee\_id
-JOIN   branches  br ON br.branchcode    = a.location\_id
-WHERE  a.is\_base\_shift = 1
-  AND  a.location\_id  <> '\_\_OUT\_\_'
-  AND  a.shift\_date BETWEEN <<From|date>> AND <<To|date>>
-  AND  TIME\_TO\_SEC(TIMEDIFF(a.end\_time, a.start\_time))/3600.0 >= <<Min branch-hour length (hours)|integer>>
-  AND  NOT EXISTS (
+FROM koha_plugin_staffsched_assignments a
+JOIN borrowers b ON b.borrowernumber = a.employee_id
+JOIN branches br ON br.branchcode = a.location_id
+WHERE a.is_base_shift = 1
+  AND a.location_id <> '__OUT__'
+  AND a.shift_date BETWEEN <<From|date>> AND <<To|date>>
+  AND TIME_TO_SEC(TIMEDIFF(a.end_time, a.start_time))/3600.0 >= <<Min branch-hour length (hours)|integer>>
+  AND NOT EXISTS (
         SELECT 1
-        FROM   koha\_plugin\_staffsched\_assignments z
-        WHERE  z.is\_base\_shift = 0
-          AND  z.employee\_id   = a.employee\_id
-          AND  z.shift\_date    = a.shift\_date
-          AND  z.start\_time   <  a.end\_time
-          AND  z.end\_time     >  a.start\_time
+        FROM koha_plugin_staffsched_assignments z
+        WHERE z.is_base_shift = 0
+          AND z.employee_id = a.employee_id
+          AND z.shift_date = a.shift_date
+          AND z.start_time < a.end_time
+          AND z.end_time > a.start_time
        )
-ORDER  BY a.shift\_date, b.surname;
+ORDER BY a.shift_date, b.surname;
 ```
 7. Recent audit-log activity
 ```sql
 SELECT
-    al.created\_at,
-    al.changed\_by,
-    al.action\_type,
-    CONCAT(b.surname, ', ', b.firstname) AS affected\_staff,
+    al.created_at,
+    al.changed_by,
+    al.action_type,
+    CONCAT(b.surname, ', ', b.firstname) AS affected_staff,
     al.details
-FROM   koha\_plugin\_staffsched\_audit al
-LEFT  JOIN borrowers b ON b.borrowernumber = al.employee\_id
-WHERE  al.created\_at >= <<Since|date>>
-ORDER  BY al.created\_at DESC
-LIMIT  <<Max rows|integer>>;
+FROM koha_plugin_staffsched_audit al
+LEFT JOIN borrowers b ON b.borrowernumber = al.employee_id
+WHERE al.created_at >= <<Since|date>>
+ORDER BY al.created_at DESC
+LIMIT <<Max rows|integer>>;
 ```
 8. Changes made by a specific user
 ```sql
 SELECT
-    al.created\_at,
-    al.action\_type,
-    CONCAT(b.surname, ', ', b.firstname) AS affected\_staff,
+    al.created_at,
+    al.action_type,
+    CONCAT(b.surname, ', ', b.firstname) AS affected_staff,
     al.details
-FROM   koha\_plugin\_staffsched\_audit al
-LEFT  JOIN borrowers b ON b.borrowernumber = al.employee\_id
-WHERE  al.changed\_by LIKE CONCAT('%', <<User name (partial match)|text>>, '%')
-  AND  al.created\_at BETWEEN <<From|date>> AND <<To|date>>
-ORDER  BY al.created\_at DESC;
+FROM koha_plugin_staffsched_audit al
+LEFT JOIN borrowers b ON b.borrowernumber = al.employee_id
+WHERE al.changed_by LIKE CONCAT('%', <<User name (partial match)|text>>, '%')
+  AND al.created_at BETWEEN <<From|date>> AND <<To|date>>
+ORDER BY al.created_at DESC;
 ```
 9. Shifts scheduled on a Koha-defined holiday
 Cross-references the scheduler against Koha's own holiday tables —
 useful for catching staff inadvertently scheduled on a closure.
 ```sql
 SELECT
-    a.shift\_date,
+    a.shift_date,
     br.branchname,
     CONCAT(b.surname, ', ', b.firstname) AS staff,
-    a.start\_time, a.end\_time,
+    a.start_time, 
+    a.end_time,
     COALESCE(sh.title, rh.title) AS holiday
-FROM   koha\_plugin\_staffsched\_assignments a
-JOIN   borrowers b  ON b.borrowernumber = a.employee\_id
-JOIN   branches  br ON br.branchcode    = a.location\_id
-LEFT  JOIN special\_holidays sh
-       ON sh.branchcode = a.location\_id
-      AND sh.day        = DAY(a.shift\_date)
-      AND sh.month      = MONTH(a.shift\_date)
-      AND sh.year       = YEAR(a.shift\_date)
-LEFT  JOIN repeatable\_holidays rh
-       ON rh.branchcode = a.location\_id
-      AND ((rh.day      = DAY(a.shift\_date) AND rh.month = MONTH(a.shift\_date))
-        OR  rh.weekday  = WEEKDAY(a.shift\_date))
-WHERE  (sh.idholiday IS NOT NULL OR rh.id IS NOT NULL)
-  AND  a.is\_base\_shift = 1
-  AND  a.location\_id  <> '\_\_OUT\_\_'
-  AND  a.shift\_date BETWEEN <<From|date>> AND <<To|date>>
-ORDER  BY a.shift\_date, br.branchname, b.surname;
+FROM koha_plugin_staffsched_assignments a
+JOIN borrowers b ON b.borrowernumber = a.employee_id
+JOIN branches br ON br.branchcode = a.location_id
+LEFT JOIN special_holidays sh
+       ON sh.branchcode = a.location_id
+      AND sh.day        = DAY(a.shift_date)
+      AND sh.month      = MONTH(a.shift_date)
+      AND sh.year       = YEAR(a.shift_date)
+LEFT JOIN repeatable_holidays rh
+       ON rh.branchcode = a.location_id
+      AND ((rh.day      = DAY(a.shift_date) AND rh.month = MONTH(a.shift_date))
+        OR rh.weekday   = WEEKDAY(a.shift_date))
+WHERE (sh.idholiday IS NOT NULL OR rh.id IS NOT NULL)
+  AND a.is_base_shift = 1
+  AND a.location_id <> '__OUT__'
+  AND a.shift_date BETWEEN <<From|date>> AND <<To|date>>
+ORDER BY a.shift_date, br.branchname, b.surname;
 ```
 10. Weekly headcount heatmap (one row per date, columns per branch)
 ```sql
 SELECT
-    a.shift\_date,
-    SUM(CASE WHEN a.location\_id = 'MAIN'   THEN 1 ELSE 0 END) AS main,
-    SUM(CASE WHEN a.location\_id = 'BRANCH' THEN 1 ELSE 0 END) AS branch
-FROM   koha\_plugin\_staffsched\_assignments a
-WHERE  a.is\_base\_shift = 1
-  AND  a.location\_id  <> '\_\_OUT\_\_'
-  AND  a.shift\_date BETWEEN <<Week start|date>> AND DATE\_ADD(<<Week start|date>>, INTERVAL 6 DAY)
-GROUP  BY a.shift\_date
-ORDER  BY a.shift\_date;
-```
+    a.shift_date,
+    SUM(CASE WHEN a.location_id = 'MAIN' THEN 1 ELSE 0 END) AS main,
+    SUM(CASE WHEN a.location_id = 'BRANCH' THEN 1 ELSE 0 END) AS branch
+FROM koha_plugin_staffsched_assignments a
+WHERE a.is_base_shift = 1
+  AND a.location_id <> '__OUT__'
+  AND a.shift_date BETWEEN <<Week start|date>> AND DATE_ADD(<<Week start|date>>, INTERVAL 6 DAY)
+GROUP BY a.shift_date
+ORDER BY a.shift_date;
 > Edit the `CASE WHEN a.location\_id = '…'` lines to match your
 > actual branch codes (look them up in
 > \*\*Administration → Libraries\*\*).
