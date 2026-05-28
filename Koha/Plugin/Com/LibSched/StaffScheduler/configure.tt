@@ -1,0 +1,74 @@
+[% USE raw %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Staff Scheduler &rsaquo; Configure &rsaquo; [% 'Koha' | html %]</title>
+[% INCLUDE 'doc-head-close.inc' %]
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'cat-search.inc' %]
+
+<div id="breadcrumbs">
+  <a href="/cgi-bin/koha/mainpage.pl">Home</a>
+  &rsaquo; <a href="/cgi-bin/koha/plugins/plugins-home.pl">Plugins</a>
+  &rsaquo; Staff Scheduler Configuration
+</div>
+
+<div class="main container-fluid">
+  <div class="row">
+    <div class="col-sm-10 col-sm-push-2">
+      <h1>Staff Scheduler &mdash; Configuration</h1>
+
+      [% IF saved %]
+        <div class="dialog message">Settings saved.</div>
+      [% END %]
+
+      <form method="post">
+        <input type="hidden" name="class"      value="Koha::Plugin::Com::LibSched::StaffScheduler" />
+        <input type="hidden" name="method"     value="configure" />
+        <input type="hidden" name="save"       value="1" />
+        <input type="hidden" name="csrf_token" value="[% csrf_token | html %]" />
+
+        <fieldset class="rows">
+          <legend>Staff Borrower Category</legend>
+          <ol>
+            <li>
+              <label for="staff_categorycode">Category code(s) for staff:</label>
+              <input type="text"
+                     id="staff_categorycode"
+                     name="staff_categorycode"
+                     value="[% staff_categorycode | html %]"
+                     size="40"
+                     placeholder="STAFF" />
+              <span class="hint">
+                Comma-separated if multiple (e.g. <code>STAFF,LIB</code>).
+                Borrowers with these category codes appear on the scheduler.
+              </span>
+            </li>
+          </ol>
+        </fieldset>
+
+        <fieldset class="rows">
+          <legend>Who can edit schedules</legend>
+          <ol>
+            <li>
+              <label for="edit_permission">Edit permission:</label>
+              <select id="edit_permission" name="edit_permission">
+                <option value="any_staff"      [% IF edit_permission == 'any_staff'      %]selected="selected"[% END %]>Any logged-in Koha staff user</option>
+                <option value="superlibrarian" [% IF edit_permission == 'superlibrarian' %]selected="selected"[% END %]>Only superlibrarians</option>
+              </select>
+              <span class="hint">
+                Controls who can save changes (zones, branch colors, shift assignments).
+                Read-only browsing is always allowed for any staff user.
+              </span>
+            </li>
+          </ol>
+        </fieldset>
+
+        <fieldset class="action">
+          <input type="submit" value="Save configuration" class="btn btn-primary" />
+          <a href="/cgi-bin/koha/plugins/plugins-home.pl" class="cancel">Cancel</a>
+        </fieldset>
+      </form>
+    </div><!-- /.col -->
+  </div><!-- /.row -->
+</div><!-- /.main -->
+
+[% INCLUDE 'intranet-bottom.inc' %]
